@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Statement Processor | Rule-Engine Automation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for reading/writing Excel files natively in browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="/src/style.css">
+    <style>
+        /* Admin Interface Styles */
+        .admin-layout {
+            display: flex;
+            min-height: 70vh;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .admin-sidebar {
+            width: 260px;
+            background: rgba(0, 0, 0, 0.25);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .admin-tab-btn {
+            text-align: left;
+            padding: 12px 1rem;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-tab-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+        }
+
+        .admin-tab-btn.active {
+            background: rgba(249, 115, 22, 0.15);
+            color: var(--primary);
+            border-color: rgba(249, 115, 22, 0.3);
+            font-weight: 600;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            overflow-x: hidden;
+        }
+
+        .admin-panel {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .admin-panel.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0 0 0;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: auto;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .admin-search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 5px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 1rem;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .admin-badge-thu {
+            background: rgba(16, 185, 129, 0.15) !important;
+            color: var(--success) !important;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+
+        .admin-badge-chi {
+            background: rgba(239, 68, 68, 0.15) !important;
+            color: var(--danger) !important;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="glass-panel">
+            <div class="logo">
+                <button id="btn-global-back"
+                    style="display: none; padding: 0; border-radius: 50%; width: 36px; height: 36px; align-items: center; justify-content: center; background: rgba(255,255,255,0.15); margin-right: 0.5rem; border: none; cursor: pointer; transition: 0.2s;"
+                    title="Quay lại">
+                    <svg style="width: 20px; height: 20px; color: white;" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"></path>
+                    </svg>
+                </button>
+                <div class="logo-icon"
+                    style="background: #ffffff; width: 50px; height: 50px; overflow: hidden; border-radius: 12px; padding: 2px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">
+                    <img src="/logo.png" alt="Logo Anchor" style="width: 100%; height: 100%; object-fit: contain;"
+                        onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjk3MzE2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTIyIDEyQzIyIDE3LjUyMjggMTcuNTIyOCAyMiAxMiAyMEM2LjQ3NzE1IDIyIDIgMTcuNTIyOCAyIDEyQzIgNi40NzcxNSA2LjQ3NzE1IDIgMTIgMkMxNy51MjI4IDIgMjIgNi40NzcxNSAyMiAxMloiPjwvcGF0aD48L3N2Zz4='">
+                </div>
+                <h1
+                    style="color: var(--primary); font-size: 1.6rem; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 800;">
+                    C.H.L LOGISTICS - XỬ LÝ SAO KÊ</h1>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="badge" id="supabase-status-badge">Supabase Connected</div>
+                <button class="btn btn-primary" id="btn-admin-panel" style="padding: 0.5rem 1.2rem; font-weight: 600; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);">🗃️ Quản lý Danh mục</button>
+                <button class="btn btn-secondary" id="btn-settings" style="padding: 0.5rem 1rem;">⚙️ Master Data</button>
+            </div>
+        </header>
+
+        <!-- Stepper -->
+        <div class="stepper glass-panel">
+            <div class="step active" id="step-1">
+                <div class="step-circle">1</div>
+                <div class="step-title">Upload & Detect</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" id="step-2">
+                <div class="step-circle">2</div>
+                <div class="step-title">Rule-Engine</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" id="step-3">
+                <div class="step-circle">3</div>
+                <div class="step-title">Entity Mapping</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" id="step-4">
+                <div class="step-circle">4</div>
+                <div class="step-title">Export AMIS</div>
+            </div>
+        </div>
+
+        <main class="content-area">
+            <!-- View 1: Upload (Active by default) -->
+            <section id="view-upload" class="view active glass-panel">
+                <div class="upload-zone" id="drop-zone">
+                    <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                        </path>
+                    </svg>
+                    <h2>Kéo thả file sao kê vào đây</h2>
+                    <p>Hỗ trợ file .xlsx, .xls tải từ BIDV hoặc MB Bank</p>
+                    <input type="file" id="file-input" accept=".xlsx, .xls, .csv" class="hidden-input">
+                    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Chọn
+                        File</button>
+                </div>
+            </section>
+
+            <!-- View 2: Processing & Results -->
+            <section id="view-results" class="view">
+                <div class="results-header glass-panel">
+                    <div class="summary">
+                        <h2 id="bank-name">Ngân hàng: --</h2>
+                        <p id="record-count">0 giao dịch được tìm thấy</p>
+                    </div>
+                    <div class="actions" style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-secondary" id="btn-reset">Làm lại</button>
+                        <button class="btn btn-success" id="btn-export">Tiếp tục: Xuất AMIS</button>
+                    </div>
+                </div>
+
+                <div class="filter-bar glass-panel"
+                    style="display: flex; gap: 15px; padding: 1rem 1.5rem; margin-bottom: 1rem;">
+                    <input type="text" id="filter-text" class="form-control"
+                        placeholder="Tìm theo nội dung, mã khách hàng..." style="flex: 1; padding: 0.5rem 1rem;">
+                    <button id="btn-clear-filters" class="btn btn-secondary"
+                        style="padding: 0.5rem 1rem; border: 1px solid rgba(255,255,255,0.2);"
+                        title="Xóa tất cả các điều kiện lọc (Global & Cột)">✖ Xóa lọc</button>
+                    <select id="filter-status" class="form-control" style="padding: 0.5rem 1rem; width: 250px;">
+                        <option value="ALL">Tất cả trạng thái</option>
+                        <option value="CHECK_AGAIN">⚠ Bị lỗi chưa Map (CHECK_AGAIN)</option>
+                        <option value="MAPPED">✔ Đã Map thành công</option>
+                    </select>
+                </div>
+
+                <div class="table-container glass-panel">
+                    <table id="results-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 160px;">
+                                    Ngày GD
+                                    <input type="search" id="col-filter-date" class="col-filter form-control"
+                                        placeholder="Lọc ngày..."
+                                        style="width: 100%; margin-top: 8px; padding: 4px 8px; font-size: 0.85em; font-weight: normal;">
+                                </th>
+                                <th class="text-right" style="min-width: 140px;">
+                                    Ghi nợ
+                                    <input type="search" id="col-filter-debit" class="col-filter form-control"
+                                        placeholder="Lọc số tiền..."
+                                        style="width: 100%; margin-top: 8px; padding: 4px 8px; font-size: 0.85em; font-weight: normal; text-align: right;">
+                                </th>
+                                <th class="text-right" style="min-width: 140px;">
+                                    Ghi có
+                                    <input type="search" id="col-filter-credit" class="col-filter form-control"
+                                        placeholder="Lọc số tiền..."
+                                        style="width: 100%; margin-top: 8px; padding: 4px 8px; font-size: 0.85em; font-weight: normal; text-align: right;">
+                                </th>
+                                <th>
+                                    Chi tiết gốc
+                                    <input type="search" id="col-filter-descRaw" class="col-filter form-control"
+                                        placeholder="Lọc keyword..."
+                                        style="width: 100%; margin-top: 8px; padding: 4px 8px; font-size: 0.85em; font-weight: normal;">
+                                </th>
+                                <th>
+                                    Chi tiết chuẩn hóa (Rule-Engine)
+                                    <input type="search" id="col-filter-descRule" class="col-filter form-control"
+                                        placeholder="Lọc diễn giải..."
+                                        style="width: 100%; margin-top: 8px; padding: 4px 8px; font-size: 0.85em; font-weight: normal;">
+                                </th>
+                                <th style="min-width: 250px;">
+                                    Mã Đối Tượng (Mapping)
+                                    <input type="search" id="col-filter-entity" class="col-filter form-control"
+                                        placeholder="Lọc theo mã / tên..."
+                                        style="width: 100%; margin-top: 8px; padding: 4px 8px; font-size: 0.85em; font-weight: normal;">
+                                </th>
+                                <th style="width: 50px; text-align: center;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- View 3: Export AMIS -->
+            <section id="view-export" class="view glass-panel export-view">
+                <div class="success-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h2>Đã sẵn sàng xuất dữ liệu</h2>
+                <p>Hệ thống đã tự động phân loại thành BÁO CÓ (Φ Thu) và BÁO NỢ (Φ Chi).</p>
+                <div class="export-actions">
+                    <div style="display: flex; flex-direction: column; gap: 8px; width: 220px;">
+                        <label style="font-size: 0.85rem; color: var(--text-muted);">STT bắt đầu BÁO CÓ (Ngày
+                            đầu)</label>
+                        <input type="number" id="voucher-start-thu" value="1" min="1" class="form-control"
+                            style="text-align: center; font-size: 1.1em;">
+                        <button class="btn btn-primary" id="btn-export-thu" style="padding: 12px 10px;">⬇ Tải BÁO
+                            CÓ.xlsx</button>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; width: 220px;">
+                        <label style="font-size: 0.85rem; color: var(--text-muted);">STT bắt đầu BÁO NỢ (Ngày
+                            đầu)</label>
+                        <input type="number" id="voucher-start-chi" value="1" min="1" class="form-control"
+                            style="text-align: center; font-size: 1.1em;">
+                        <button class="btn btn-danger" id="btn-export-chi" style="padding: 12px 10px;">⬇ Tải BÁO
+                            NỢ.xlsx</button>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:center; gap: 15px; margin-top: 2rem;">
+                    <button class="btn btn-secondary" id="btn-back-results">⬅ Quay lại Bảng dữ liệu</button>
+                    <button class="btn btn-secondary" id="btn-start-over">Xóa trắng / Xử lý file mới</button>
+                </div>
+            </section>
+
+            <!-- View 4: Admin Categories Management -->
+            <section id="view-admin" class="view glass-panel" style="padding: 0; min-height: 75vh; display: none;">
+                <div class="admin-layout">
+                    <!-- Sidebar Tabs Navigation -->
+                    <aside class="admin-sidebar">
+                        <h3 style="font-size: 1.1rem; color: var(--primary); font-weight: 700; margin-bottom: 1rem; text-transform: uppercase; padding-left: 0.5rem;">Danh mục</h3>
+                        <button class="admin-tab-btn active" data-tab="entities">👥 Khách hàng / NCC</button>
+                        <button class="admin-tab-btn" data-tab="mapping">🔍 Từ điển Ánh xạ</button>
+                        <button class="admin-tab-btn" data-tab="accounts">💳 TK Ngân hàng</button>
+                        <button class="admin-tab-btn" data-tab="rules">📋 Định khoản Tự động</button>
+                        <button class="admin-tab-btn" data-tab="special">⚙️ Quy tắc Cắt chuỗi</button>
+                        <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08);">
+                            <button class="btn btn-secondary" id="btn-back-from-admin" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">⬅ Quay lại</button>
+                        </div>
+                    </aside>
+
+                    <!-- Content Panel -->
+                    <div class="admin-content">
+                        <div id="admin-panel-container" style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+                            <!-- Panels rendered dynamically via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals & Toasts -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content glass-panel"
+            style="width: 600px; max-width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <h2>Cấu hình Master Data</h2>
+                <button id="btn-close-settings" class="btn btn-secondary" style="padding: 5px 10px;">X</button>
+            </div>
+
+            <div class="upload-zone" id="master-drop-zone" style="margin: 0 0 20px 0; padding: 2rem;">
+                <p>Kéo thả file TEMPLATE (Excel) vào đây để cập nhật Từ điển / Danh mục</p>
+                <input type="file" id="master-file-input" accept=".xlsx, .xls" class="hidden-input">
+                <button class="btn btn-primary" onclick="document.getElementById('master-file-input').click()">Chọn
+                    File</button>
+            </div>
+
+            <div id="master-data-stats" style="margin-bottom: 20px; font-size: 0.9em; color: var(--text-muted);">
+                Trạng thái: Đang dùng default data.js
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-danger" id="btn-clear-settings">Khôi phục mặc định</button>
+                <button class="btn btn-success" id="btn-export-master">Tải Cấu hình (Excel)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inline Edit Modal -->
+    <div id="inline-edit-modal" class="modal">
+        <div class="modal-content glass-panel" style="width: 400px; max-width: 90%;">
+            <h3 style="margin-bottom: 15px;">Cập nhật Giao dịch</h3>
+            <div style="margin-bottom: 15px;">
+                <label>Chi tiết chuẩn hóa (Diễn giải hóa đơn)</label>
+                <textarea id="edit-desc-rule" class="form-control"
+                    style="width: 100%; padding: 8px; margin-top: 5px; min-height: 90px; resize: vertical; line-height: 1.4; font-family: inherit; font-size: 0.95em;"></textarea>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label>Mã Đối Tượng (Từ KH/NCC)</label>
+                <input type="text" id="edit-entity-code" class="form-control"
+                    style="width: 100%; padding: 8px; margin-top: 5px;" placeholder="VD: BGD002">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label>
+                    <input type="checkbox" id="edit-save-rule" checked> Lưu làm Quy tắc mới vào Từ điển hiện tại?
+                </label>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn btn-secondary" id="btn-cancel-edit">Hủy</button>
+                <button class="btn btn-primary" id="btn-save-edit">Lưu Thay Đổi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loading-text">Đang xử lý dữ liệu...</p>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
