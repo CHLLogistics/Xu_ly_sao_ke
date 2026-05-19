@@ -143,10 +143,37 @@
             border-radius: 6px;
             font-size: 0.8rem;
         }
+
+        /* Shake animation for incorrect passcode */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Passcode Protection Overlay -->
+    <div id="passcode-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, #1e1e2e, #0f0f16); z-index: 99999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); transition: opacity 0.5s ease, visibility 0.5s ease;">
+        <div class="glass-panel" style="width: 100%; max-width: 420px; padding: 2.5rem; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;">
+            <div style="font-size: 3rem; margin-bottom: 1rem; filter: drop-shadow(0 0 10px rgba(249,115,22,0.4));">🔒</div>
+            <h2 style="color: #ffffff; font-size: 1.5rem; margin-bottom: 0.5rem; font-weight: 700; font-family: 'Inter', sans-serif;">Hệ Thống Bảo Mật</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; font-family: 'Inter', sans-serif;">Vui lòng nhập mật mã nội bộ để truy cập ứng dụng.</p>
+            
+            <div style="margin-bottom: 1.5rem; text-align: left;">
+                <input type="password" id="app-passcode-input" placeholder="Nhập mã bảo vệ..." style="width: 100%; padding: 12px 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.2); color: #ffffff; font-size: 1rem; text-align: center; letter-spacing: 4px; outline: none; transition: border-color 0.2s;" />
+                <div id="passcode-error-msg" style="color: var(--danger); font-size: 0.85rem; margin-top: 8px; display: none; text-align: center;">Mật mã không chính xác! Vui lòng thử lại.</div>
+            </div>
+            
+            <button id="btn-submit-passcode" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Xác Nhận</button>
+            <p style="margin-top: 1.5rem; font-size: 0.75rem; color: rgba(255,255,255,0.25);">C.H.L Logistics © 2026</p>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Header -->
         <header class="glass-panel">

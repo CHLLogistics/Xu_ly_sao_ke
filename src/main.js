@@ -73,7 +73,47 @@ function undoAction() {
 }
 
 // Recover session & load data
-window.addEventListener('DOMContentLoaded', async () => {
+window.addEventListener('DOMContentLoaded', () => {
+    const correctPasscode = import.meta.env.VITE_APP_PASSCODE || 'chl2026';
+    const overlay = $('passcode-overlay');
+    const input = $('app-passcode-input');
+    const errorMsg = $('passcode-error-msg');
+    const submitBtn = $('btn-submit-passcode');
+
+    function checkPasscode() {
+        const value = input.value.trim();
+        if (value === correctPasscode) {
+            localStorage.setItem('app_passcode', value);
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 500);
+            initApp();
+        } else {
+            errorMsg.style.display = 'block';
+            input.parentElement.classList.add('shake');
+            setTimeout(() => {
+                input.parentElement.classList.remove('shake');
+            }, 300);
+            input.value = '';
+            input.focus();
+        }
+    }
+
+    if (localStorage.getItem('app_passcode') === correctPasscode) {
+        overlay.style.display = 'none';
+        initApp();
+    } else {
+        overlay.style.display = 'flex';
+        input.focus();
+        submitBtn.onclick = checkPasscode;
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') checkPasscode();
+        };
+    }
+});
+
+async function initApp() {
     showLoading();
     const statusBadge = $('supabase-status-badge');
     try {
@@ -123,7 +163,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (e) { }
     }
-});
+}
 
 // Event Listeners
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
